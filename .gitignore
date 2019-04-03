@@ -1,0 +1,4 @@
+src/editor.worker.js
+node_modules/
+dist/
+.cache/
