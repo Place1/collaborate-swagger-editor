@@ -1,18 +1,46 @@
 import PeerJS from 'peerjs';
-import { editor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
 import { EventEmitter } from 'events';
 import StrictEventEmitter, { StrictBroadcast } from 'strict-event-emitter-types';
 
-export type ConnectionEmitter = StrictEventEmitter<EventEmitter, Events>
-export type ConnectionBroadcast = StrictBroadcast<ConnectionEmitter>
+export type RtcEmitter = StrictEventEmitter<EventEmitter, RtcInEvents, RtcOutEvents>
+export type RtcBroadcast = StrictBroadcast<RtcEmitter>
 
-interface Events {
-  changes: editor.IModelContentChange[];
-  error: Error;
+export interface RtcOutEvents {
+  changes: monaco.editor.IModelContentChange[];
+  cursorPosition: monaco.Position;
+  // TODO: implement event for initial editor text
+
+  // private section (perhaps move to another emitter)
+  peerList: string[];
 }
 
+export type RtcInEvents = {
+  [K in keyof RtcOutEvents]: RtcInboundEvent<RtcOutEvents[K]>;
+}
+
+export interface RtcInboundEvent<T> {
+  peerid: string;
+  payload: T;
+}
+
+export interface ConnectionEvents {
+  open: void;
+  error: Error;
+  close: void;
+}
+
+export type ConnectionEmitter = StrictEventEmitter<EventEmitter, ConnectionEvents>;
+
 export class Connection {
-  constructor(private raw: PeerJS.DataConnection, private events: ConnectionEmitter) {
+
+  events: ConnectionEmitter = new EventEmitter();
+
+  constructor(
+    private raw: PeerJS.DataConnection,
+    private dataEvents: RtcEmitter,
+  ) {
+    raw.on('open', this.onOpen);
     raw.on('data', this.onData);
     raw.on('error', this.onError);
     raw.on('close', this.onClose);
@@ -22,14 +50,27 @@ export class Connection {
     return this.raw.peer;
   }
 
-  send: ConnectionBroadcast = (event: string, payload?: any) => {
+  send: RtcBroadcast = (event: string, payload?: any) => {
     console.info(`sending data to ${this.id()}`, { event, payload })
-    this.raw.send({ event, payload });
+    if (this.raw.open) {
+      this.raw.send({ event, payload });
+    } else {
+      console.warn(`unable to send data to ${this.id()}. connection is not open.`, { event, payload });
+    }
+  }
+
+  private onOpen = () => {
+    console.log(`connection open ${this.id()}`);
+    this.events.emit('open');
   }
 
   private onData = (data: any) => {
     console.log(`received data from ${this.id()}`, data);
-    this.events.emit(data.event, data.payload);
+    const event: RtcInboundEvent<any> = {
+      peerid: this.id(),
+      payload: data.payload,
+    }
+    this.dataEvents.emit(data.event, event);
   }
 
   private onError = (error: Error) => {
@@ -39,5 +80,6 @@ export class Connection {
 
   private onClose = () => {
     console.info(`connection closed from ${this.id()}`);
+    this.events.emit('close');
   }
 }
