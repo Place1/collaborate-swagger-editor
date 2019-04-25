@@ -14,7 +14,6 @@ export interface RtcOutEvents {
   cursorPosition: monaco.Position;
 
   // private section (perhaps move to another emitter)
-  peerJsConnected: void;
   peerList: string[];
 }
 

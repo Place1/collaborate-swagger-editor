@@ -28,6 +28,10 @@ export class TextCrdt {
   }
 
   applyMany(operations: Operation[]) {
+    // TODO: is it possible to calculate edits for monaco
+    // given a set of operations being applied to the crdt?
+    // we don't want to call setValue() on monaco after changing
+    // the crdt.
     for (const operation of operations.map(parseOp)) {
       console.log(`applying operation ${operation}`)
       this.crdt.apply(operation);
@@ -60,9 +64,10 @@ export class TextCrdt {
   }
 
   loadFromJSON(json: SerializedCrdt) {
-    json.s.forEach((atom: [string, string]) => {
+    for (const atom of json.s) {
       ((this.crdt as any).atoms as AtomList<string>).add(parseIdent(atom[0]), atom[1]);
-    })
+
+    }
     (this.crdt as any).time = json.t;
     this.events.emit('onChange', this.getValue());
   }

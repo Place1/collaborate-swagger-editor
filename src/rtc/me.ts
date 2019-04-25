@@ -19,7 +19,7 @@ export class Me {
       port: 8000,
       path: '/rtc'
     });
-    this.peer.on('open', )
+    this.peer.on('open', this.onOpen);
     this.peer.on('connection', this.onConnection);
     this.peer.on('disconnected', this.onDisconnected);
     this.peer.on('error', this.onError);
@@ -46,7 +46,14 @@ export class Me {
    */
   join(id: string) {
     console.info(`joining peer ${id}`);
-    this.createConnection(this.peer.connect(id))
+    const connection = this.createConnection(this.peer.connect(id))
+    connection.events.once('open', () => {
+      connection.send('requestInitial');
+    });
+  }
+
+  private onOpen = () => {
+    console.info('i have connected');
   }
 
   /**
@@ -79,9 +86,10 @@ export class Me {
 
   private createConnection(raw: PeerJS.DataConnection) {
     const connection = new Connection(raw, this.events);
-    connection.events.once('open', () => connection.send('peerList', Array.from(this.connections.keys())))
+    connection.events.once('open', () => connection.send('peerList', Array.from(this.connections.keys())));
     connection.events.once('close', () => this.connections.delete(connection.id()));
     connection.events.once('error', () => this.connections.delete(connection.id()));
     this.connections.set(raw.peer, connection);
+    return connection;
   }
 }

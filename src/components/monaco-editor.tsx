@@ -2,10 +2,8 @@ import React, { useEffect } from 'react';
 import * as monaco from 'monaco-editor';
 import { me } from '../rtc/hmm';
 import './monaco-editor.css';
-import { getRandomInt, hashCode } from '../utils';
+import { hashCode } from '../utils';
 import { TextCrdt, Operation } from '../text-crdt';
-import { Op, OpKind, InsertOp, RemoveOp } from '../../kseq/src';
-import { Ident } from '../../kseq/src/idents';
 
 window.MonacoEnvironment = {
 	getWorkerUrl: function (moduleId: string, label: string) {
@@ -38,12 +36,8 @@ export const MonacoEditor = React.memo((props: Props) => {
 
     const textCrdt = new TextCrdt(me.id());
 
-    me.events.once('peerJsConnected', () => {
-      me.dispatch('requestInitial');
-    })
-
     me.events.on('requestInitial', () => {
-      // me.dispatch('initial', textCrdt.toJSON());
+      me.dispatch('initial', textCrdt.toJSON());
     })
 
     me.events.on('initial', (json) => {
@@ -52,14 +46,14 @@ export const MonacoEditor = React.memo((props: Props) => {
 
     textCrdt.events.on('onChange', (value) => {
       locked = true;
-      editor.getModel()!.setValue(value);
+      editor.setValue(value);
       props.onChange(value);
       locked = false;
     });
 
     const onChangeDisposer = editor.onDidChangeModelContent((event) => {
       if (!locked) {
-        const operations = applyChangesToCrdt(textCrdt, editor.getModel()!.getValue(), event.changes);
+        const operations = applyChangesToCrdt(textCrdt, editor.getValue(), event.changes);
         me.dispatch('changes', operations);
       }
     });
@@ -104,22 +98,22 @@ export const MonacoEditor = React.memo((props: Props) => {
         const colorNumber = hashCode(peerid) % 10 + 1; // consistent hash to get a stable color number
         const element = editor.getDomNode()!.querySelector<HTMLElement>(`.peer-cursor-${peerid}`)!;
         element.style.opacity = '1'
-        const rect = element.getBoundingClientRect();
-        const nameElement = document.createElement('span');
-        nameElement.className = `peer-cursor-name cursor-color-${colorNumber}`
-        nameElement.innerHTML = peerid;
-        nameElement.style.fontFamily = 'Consolas, "Courier New", monospace';
-        nameElement.style.fontSize = '16px';
-        nameElement.style.fontWeight = 'bold';
-        nameElement.style.top = `${rect.top - rect.height - 4}px`; // 4px of padding :D
-        nameElement.style.left = `${rect.left}px`;
-        document.body.appendChild(nameElement);
+        // const rect = element.getBoundingClientRect();
+        // const nameElement = document.createElement('span');
+        // nameElement.className = `peer-cursor-name cursor-color-${colorNumber}`
+        // nameElement.innerHTML = peerid;
+        // nameElement.style.fontFamily = 'Consolas, "Courier New", monospace';
+        // nameElement.style.fontSize = '16px';
+        // nameElement.style.fontWeight = 'bold';
+        // nameElement.style.top = `${rect.top - 27}px`; // 27px is the height of the bubble
+        // nameElement.style.left = `${rect.left}px`;
+        // document.body.appendChild(nameElement);
       });
     }
 
     me.events.on('cursorPosition', (event) => {
       cursors[event.peerid] = event.payload;
-      renderCursors();
+      // renderCursors();
     })
 
     // Testing the decorations
