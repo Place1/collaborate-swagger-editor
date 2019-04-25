@@ -2,12 +2,13 @@ import PeerJS from 'peerjs';
 import * as monaco from 'monaco-editor';
 import { EventEmitter } from 'events';
 import StrictEventEmitter, { StrictBroadcast } from 'strict-event-emitter-types';
+import { Operation } from '../text-crdt';
 
 export type RtcEmitter = StrictEventEmitter<EventEmitter, RtcInEvents, RtcOutEvents>
 export type RtcBroadcast = StrictBroadcast<RtcEmitter>
 
 export interface RtcOutEvents {
-  changes: monaco.editor.IModelContentChange[];
+  changes: Operation[];
   cursorPosition: monaco.Position;
   // TODO: implement event for initial editor text
 

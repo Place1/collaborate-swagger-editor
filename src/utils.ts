@@ -14,3 +14,9 @@ export function hashCode(str: string) {
 	}
 	return Math.abs(hash);
 }
+
+export function invarient(condition: boolean, message: string) {
+	if (!condition) {
+		console.warn(`invariant has been broken: ${message}`);
+	}
+}

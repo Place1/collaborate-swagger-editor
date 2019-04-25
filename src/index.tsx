@@ -5,19 +5,19 @@ import { render } from 'react-dom';
 import { SwaggerUI } from './components/swagger-ui';
 import { MonacoEditor } from './components/monaco-editor';
 import { Bar } from './components/Bar';
-import { editor } from 'monaco-editor';
-import { me } from './rtc/hmm';
 
 class App extends React.Component {
 
   state = {
+    value: '',
     spec: {},
   }
 
-  private onEditorChange = (value: string, changes: editor.IModelContentChange[]) => {
-    if (changes.length > 0) {
-      me.dispatch('changes', JSON.parse(JSON.stringify(changes)));
-    }
+  private onCrdtChange = (value: string) => {
+    this.setState({ value });
+  };
+
+  private onEditorChange = (value: string) => {
     try {
       this.setState({ spec: yaml.safeLoad(value) });
     } catch {}

@@ -3,6 +3,9 @@ import * as monaco from 'monaco-editor';
 import { me } from '../rtc/hmm';
 import './monaco-editor.css';
 import { getRandomInt, hashCode } from '../utils';
+import { TextCrdt, Operation } from '../text-crdt';
+import { Op, OpKind, InsertOp, RemoveOp } from '../../kseq/src';
+import { Ident } from '../../kseq/src/idents';
 
 window.MonacoEnvironment = {
 	getWorkerUrl: function (moduleId: string, label: string) {
@@ -18,7 +21,7 @@ interface CursorsState {
 }
 
 interface Props {
-  onChange: (value: string, changes: monaco.editor.IModelContentChange[]) => void;
+  onChange: (value: string) => void;
 }
 
 export const MonacoEditor = React.memo((props: Props) => {
@@ -30,16 +33,21 @@ export const MonacoEditor = React.memo((props: Props) => {
       fontSize: 20,
     });
 
-    // this is a hack
-    // i only want to call props.onChange when the user
-    // causes an edit, not if an rtc event triggers an edit.
-    let lock = false
+    // hack
+    let locked = false
+
+    const textCrdt = new TextCrdt(me.id());
+    textCrdt.events.on('onChange', (value) => {
+      locked = true;
+      editor.getModel()!.setValue(value);
+      props.onChange(value);
+      locked = false;
+    });
 
     const onChangeDisposer = editor.onDidChangeModelContent((event) => {
-      if (!lock) {
-        props.onChange(editor.getValue(), event.changes);
-      } else {
-        props.onChange(editor.getValue(), []);
+      if (!locked) {
+        const operations = applyChangesToCrdt(textCrdt, editor.getModel()!.getValue(), event.changes);
+        me.dispatch('changes', operations);
       }
     });
 
@@ -47,7 +55,6 @@ export const MonacoEditor = React.memo((props: Props) => {
       console.info(`cursor position changed ${event.position}`)
       me.dispatch('cursorPosition', event.position)
     })
-
 
     let decorations = new Array<string>();
     const cursors: CursorsState = {};
@@ -118,20 +125,26 @@ export const MonacoEditor = React.memo((props: Props) => {
     })
 
     me.events.on('changes', (event) => {
-      const edits = event.payload.map((change) => ({
-        ...change,
-        range: monaco.Range.lift(change.range),
-      }))
-      lock = true
-      editor.getModel()!.applyEdits(edits);
-      lock = false
+      textCrdt.applyMany(event.payload);
     });
 
     return () => {
       onChangeDisposer.dispose();
       editor.dispose()
+      textCrdt.events.removeAllListeners();
     };
   });
 
   return <div id="monacoEditor" style={{ flex: 1 }} />;
 });
+
+function applyChangesToCrdt(crdt: TextCrdt, editorValue: string, changes: monaco.editor.IModelContentChange[]) {
+  let operations = new Array<Operation>();
+  changes.forEach((change) => {
+    const start = change.rangeOffset;
+    const end = start + change.rangeLength - 1;
+    const text = change.text;
+    operations = operations.concat(...crdt.setText(text, start, end));
+  });
+  return operations;
+}

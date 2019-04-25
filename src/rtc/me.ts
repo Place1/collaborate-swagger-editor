@@ -67,7 +67,7 @@ export class Me {
 
   private onPeerList = (event: RtcInboundEvent<string[]>) => {
     for (const peer of event.payload) {
-      if (!this.connections.has(peer)) {
+      if (!this.connections.has(peer) && peer !== this.id()) {
         this.join(peer);
       }
     }
