@@ -3,12 +3,15 @@ import StrictEventEmitter, { StrictBroadcast, VoidKeys } from 'strict-event-emit
 import { KSeq, Op, InsertOp, RemoveOp, OpKind } from "../kseq/src";
 import { invarient } from './utils';
 import { Ident, Segment } from '../kseq/src/idents';
+import { ArrayAtomList, Atom, AtomList } from '../kseq/src/storage';
 
 interface CrdtOutEvents {
   onChange: string;
 }
 
 type TextCrdtEvents = StrictEventEmitter<EventEmitter, CrdtOutEvents>;
+
+export type SerializedCrdt = any;
 
 export class TextCrdt {
 
@@ -20,12 +23,16 @@ export class TextCrdt {
     this.crdt = new KSeq<string>(id);
   }
 
+  getValue() {
+    return this.crdt.toArray().join('');
+  }
+
   applyMany(operations: Operation[]) {
     for (const operation of operations.map(parseOp)) {
       console.log(`applying operation ${operation}`)
       this.crdt.apply(operation);
     }
-    this.events.emit('onChange', this.crdt.toArray().join(''));
+    this.events.emit('onChange', this.getValue());
   }
 
   setText(text: string, start: number, end: number): Operation[] {
@@ -43,9 +50,21 @@ export class TextCrdt {
       operations.push(this.crdt.insert(text[i], start + i));
     }
 
-    this.events.emit('onChange', this.crdt.toArray().join(''));
+    this.events.emit('onChange', this.getValue());
 
     return operations.map(stringifyOp);
+  }
+
+  toJSON(): SerializedCrdt {
+    return this.crdt.toJSON();
+  }
+
+  loadFromJSON(json: SerializedCrdt) {
+    json.s.forEach((atom: [string, string]) => {
+      ((this.crdt as any).atoms as AtomList<string>).add(parseIdent(atom[0]), atom[1]);
+    })
+    (this.crdt as any).time = json.t;
+    this.events.emit('onChange', this.getValue());
   }
 }
 
@@ -56,7 +75,7 @@ export class TextCrdt {
  * TODO: submit a PR
  */
 
-type Operation = string;
+export type Operation = string;
 
 function stringifyOp(op: Op): string {
   if (op instanceof InsertOp) {

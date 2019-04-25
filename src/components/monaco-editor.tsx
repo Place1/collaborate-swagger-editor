@@ -37,6 +37,19 @@ export const MonacoEditor = React.memo((props: Props) => {
     let locked = false
 
     const textCrdt = new TextCrdt(me.id());
+
+    me.events.once('peerJsConnected', () => {
+      me.dispatch('requestInitial');
+    })
+
+    me.events.on('requestInitial', () => {
+      // me.dispatch('initial', textCrdt.toJSON());
+    })
+
+    me.events.on('initial', (json) => {
+      textCrdt.loadFromJSON(json.payload);
+    })
+
     textCrdt.events.on('onChange', (value) => {
       locked = true;
       editor.getModel()!.setValue(value);

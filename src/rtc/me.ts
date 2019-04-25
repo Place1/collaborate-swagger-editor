@@ -19,6 +19,7 @@ export class Me {
       port: 8000,
       path: '/rtc'
     });
+    this.peer.on('open', )
     this.peer.on('connection', this.onConnection);
     this.peer.on('disconnected', this.onDisconnected);
     this.peer.on('error', this.onError);
@@ -33,7 +34,10 @@ export class Me {
   dispatch: RtcBroadcast = (event: any, payload?: any) => {
     console.info(`dispatching to peers`, event, payload);
     for (const connection of this.connections.values()) {
-      connection.send(event, JSON.parse(JSON.stringify(payload)));
+      if (payload !== undefined) {
+        payload = JSON.parse(JSON.stringify(payload));
+      }
+      connection.send(event, payload);
     }
   }
 
