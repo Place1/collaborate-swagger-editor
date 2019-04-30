@@ -1,3 +1,3 @@
 [submodule "kseq"]
 	path = kseq
-	url = https://github.com/nkohari/kseq.git
+	url = git@github.com:Place1/kseq.git

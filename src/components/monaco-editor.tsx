@@ -3,7 +3,8 @@ import * as monaco from 'monaco-editor';
 import { me } from '../rtc/hmm';
 import './monaco-editor.css';
 import { hashCode } from '../utils';
-import { TextCrdt, Operation } from '../text-crdt';
+import { TextCrdt, Operation, OperationResult } from '../text-crdt';
+import { OpKind } from '../../kseq/src';
 
 window.MonacoEnvironment = {
 	getWorkerUrl: function (moduleId: string, label: string) {
@@ -53,6 +54,7 @@ export const MonacoEditor = React.memo((props: Props) => {
 
     const onChangeDisposer = editor.onDidChangeModelContent((event) => {
       if (!locked) {
+        console.log('editor changes', event.changes);
         const operations = applyChangesToCrdt(textCrdt, editor.getValue(), event.changes);
         me.dispatch('changes', operations);
       }
@@ -132,7 +134,12 @@ export const MonacoEditor = React.memo((props: Props) => {
     })
 
     me.events.on('changes', (event) => {
-      textCrdt.applyMany(event.payload);
+      locked = true
+      const results = textCrdt.applyMany(event.payload);
+      applyOperationResultsToEditor(editor, results);
+      editor.render();
+      props.onChange(textCrdt.getValue());
+      locked = false;
     });
 
     return () => {
@@ -150,8 +157,26 @@ function applyChangesToCrdt(crdt: TextCrdt, editorValue: string, changes: monaco
   changes.forEach((change) => {
     const start = change.rangeOffset;
     const end = start + change.rangeLength - 1;
-    const text = change.text;
+    const text = change.text.replace(/\r\n/g, '\n'); // TODO figure out how to handle new lines
     operations = operations.concat(...crdt.setText(text, start, end));
   });
   return operations;
+}
+
+function applyOperationResultsToEditor(editor: monaco.editor.IStandaloneCodeEditor, opResults: OperationResult[]) {
+  const model = editor.getModel()!;
+  opResults.forEach((opResult) => {
+    const start = model.getPositionAt(opResult.position);
+    const end = model.getPositionAt(opResult.position + (opResult.kind === OpKind.Remove ? 1 : 0));
+    const edit = {
+      text: opResult.kind === OpKind.Remove ? '' : opResult.text,
+      range: new monaco.Range(
+        start.lineNumber,
+        start.column,
+        end.lineNumber,
+        end.column,
+      ),
+    };
+    model.applyEdits([edit]);
+  });
 }

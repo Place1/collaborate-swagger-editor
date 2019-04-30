@@ -13,6 +13,12 @@ type TextCrdtEvents = StrictEventEmitter<EventEmitter, CrdtOutEvents>;
 
 export type SerializedCrdt = any;
 
+export interface OperationResult {
+  kind: OpKind,
+  text: string,
+  position: number,
+}
+
 export class TextCrdt {
 
   events: TextCrdtEvents = new EventEmitter()
@@ -28,18 +34,24 @@ export class TextCrdt {
   }
 
   applyMany(operations: Operation[]) {
-    // TODO: is it possible to calculate edits for monaco
-    // given a set of operations being applied to the crdt?
-    // we don't want to call setValue() on monaco after changing
-    // the crdt.
-    for (const operation of operations.map(parseOp)) {
+    const edits = [];
+    for (const operation of operations.map(op => Op.parse(op))) {
       console.log(`applying operation ${operation}`)
-      this.crdt.apply(operation);
+      const pos = this.crdt.apply(operation);
+      if (pos !== -1) {
+        edits.push({
+          kind: operation.kind,
+          text: this.crdt.get(pos),
+          position: pos,
+        });
+      }
     }
-    this.events.emit('onChange', this.getValue());
+    // this.events.emit('onChange', this.getValue());
+    return edits;
   }
 
   setText(text: string, start: number, end: number): Operation[] {
+    console.info('set text', JSON.stringify(text));
     const operations = new Array<Op>();
 
     // delete the range
@@ -56,7 +68,7 @@ export class TextCrdt {
 
     this.events.emit('onChange', this.getValue());
 
-    return operations.map(stringifyOp);
+    return operations.map(op => op.toString());
   }
 
   toJSON(): SerializedCrdt {
