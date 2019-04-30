@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import StrictEventEmitter, { StrictBroadcast, VoidKeys } from 'strict-event-emitter-types';
-import { KSeq, Op, InsertOp, RemoveOp, OpKind } from "../kseq/src";
+import { KSeq, Op, InsertOp, RemoveOp, OpKind, SerializedKSeq } from "../kseq/src";
 import { invarient } from './utils';
 import { Ident, Segment } from '../kseq/src/idents';
 import { ArrayAtomList, Atom, AtomList } from '../kseq/src/storage';
@@ -71,16 +71,12 @@ export class TextCrdt {
     return operations.map(op => op.toString());
   }
 
-  toJSON(): SerializedCrdt {
+  toJSON(): SerializedKSeq<string> {
     return this.crdt.toJSON();
   }
 
-  loadFromJSON(json: SerializedCrdt) {
-    for (const atom of json.s) {
-      ((this.crdt as any).atoms as AtomList<string>).add(parseIdent(atom[0]), atom[1]);
-
-    }
-    (this.crdt as any).time = json.t;
+  loadFromJSON(json: SerializedKSeq<string>) {
+    this.crdt.fromJSON(json);
     this.events.emit('onChange', this.getValue());
   }
 }
@@ -93,29 +89,6 @@ export class TextCrdt {
  */
 
 export type Operation = string;
-
-function stringifyOp(op: Op): string {
-  if (op instanceof InsertOp) {
-    return `+${op.timestamp}/${op.replica}/${op.id.toString()}/${op.value}`;
-  }
-  if (op instanceof RemoveOp) {
-    return `-${op.timestamp}/${op.replica}/${op.id.toString()}`;
-  }
-  throw new Error(`unknown operation ${op}`);
-}
-
-function parseOp(str: string): Op {
-  const kind = str[0];
-  let [timestamp, replica, id, value] = str.substr(1).split('/', 4);
-  switch(kind) {
-    case '+':
-      return new InsertOp(replica, Number(timestamp), parseIdent(id), value);
-
-    case '-':
-      return new RemoveOp(replica, Number(timestamp), parseIdent(id));
-  }
-  throw new Error(`unknown operation ${str}`);
-}
 
 function parseIdent(str: string): Ident {
   const [time, pathstr] = str.split('#');
