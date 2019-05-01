@@ -1,5 +1,4 @@
 .another-cursor {
-  opacity: 0;
   display: inline-block;
   position: absolute;
   top: 0;
@@ -25,18 +24,6 @@
   top: 0;
   bottom: 0;
   width: 2px;
-}
-
-.peer-cursor-name {
-  position: fixed;
-  padding: 4px;
-  height: 27px;
-  display: flex;
-  align-items: center;
-  color: black;
-  border-top-right-radius: 5px;
-  border-top-left-radius: 5px;
-  border-bottom-right-radius: 5px;
 }
 
 .cursor-color-1, .cursor-color-1::before, .cursor-color-1::after {
