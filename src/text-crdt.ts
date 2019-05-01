@@ -1,17 +1,9 @@
-import { EventEmitter } from 'events';
-import StrictEventEmitter, { StrictBroadcast, VoidKeys } from 'strict-event-emitter-types';
-import { KSeq, Op, InsertOp, RemoveOp, OpKind, SerializedKSeq } from "../kseq/src";
-import { invarient } from './utils';
+import { KSeq, Op, OpKind, SerializedKSeq } from "../kseq/src";
 import { Ident, Segment } from '../kseq/src/idents';
-import { ArrayAtomList, Atom, AtomList } from '../kseq/src/storage';
-
-interface CrdtOutEvents {
-  onChange: string;
-}
-
-type TextCrdtEvents = StrictEventEmitter<EventEmitter, CrdtOutEvents>;
 
 export type SerializedCrdt = any;
+
+export type Operation = string;
 
 export interface OperationResult {
   kind: OpKind,
@@ -20,8 +12,6 @@ export interface OperationResult {
 }
 
 export class TextCrdt {
-
-  events: TextCrdtEvents = new EventEmitter()
 
   private crdt: KSeq<string>;
 
@@ -36,7 +26,7 @@ export class TextCrdt {
   applyMany(operations: Operation[]) {
     const edits = [];
     for (const operation of operations.map(op => Op.parse(op))) {
-      console.log(`applying operation ${operation}`)
+      console.info(`applying operation ${operation}`)
       const pos = this.crdt.apply(operation);
       if (pos !== -1) {
         edits.push({
@@ -46,7 +36,6 @@ export class TextCrdt {
         });
       }
     }
-    // this.events.emit('onChange', this.getValue());
     return edits;
   }
 
@@ -66,8 +55,6 @@ export class TextCrdt {
       operations.push(this.crdt.insert(text[i], start + i));
     }
 
-    this.events.emit('onChange', this.getValue());
-
     return operations.map(op => op.toString());
   }
 
@@ -77,36 +64,5 @@ export class TextCrdt {
 
   loadFromJSON(json: SerializedKSeq<string>) {
     this.crdt.fromJSON(json);
-    this.events.emit('onChange', this.getValue());
   }
-}
-
-/**
- * there's a tiny by with the KSeq Op.toString and Op.parse methods. They
- * don't pass the correct "id" to the Ident.parse algorithm.
- * So i've implemented the methods here with the fix.
- * TODO: submit a PR
- */
-
-export type Operation = string;
-
-function parseIdent(str: string): Ident {
-  const [time, pathstr] = str.split('#');
-  if (time === undefined || time.length == 0) {
-    throw new Error("The ident is missing a timestamp");
-  }
-  if (pathstr === undefined || pathstr.length == 0) {
-    throw new Error("The ident is missing a path");
-  }
-  let prev: string | undefined = undefined;
-  const path = pathstr.split('.').map((token) => {
-    let [ digit, replica ] = token.split(':', 2);
-    if (replica === undefined) {
-      replica = prev!;
-    } else {
-      prev = replica;
-    }
-    return Segment(Number(digit), replica);
-  });
-  return new Ident(Number(time), path);
 }
