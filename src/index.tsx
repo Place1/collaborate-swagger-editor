@@ -29,7 +29,9 @@ class App extends React.Component<{}, State> {
   render() {
     return (
       <div style={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column' }}>
-        <Bar />
+        <Bar>
+          <button onClick={() => console.info('crdt', this.crdt)}>log crdt</button>
+        </Bar>
         <div style={{ display: 'flex', flex: 1 }}>
           <RemoteMonaco
             me={me}

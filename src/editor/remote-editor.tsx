@@ -61,9 +61,15 @@ export class RemoteMonaco extends React.Component<Props, State> {
       this.props.me.dispatch('initial' as any, this.props.crdt.toJSON());
     })
 
+    let hasLoaded = false;
     this.props.me.events.on('initial', (json) => {
-      this.props.crdt.loadFromJSON(json.payload);
-      editor.setValue(this.props.crdt.getValue());
+      if (!hasLoaded) {
+        this.props.crdt.loadFromJSON(json.payload);
+        this.locked = true;
+        editor.setValue(this.props.crdt.getValue());
+        this.locked = false;
+        hasLoaded = true;
+      }
     })
 
     this.props.me.events.on('changes', (event) => {

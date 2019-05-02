@@ -16,7 +16,7 @@ export class Me {
     this.peerid = id;
     this.peer = new PeerJS(this.peerid, {
       secure: false,
-      host: 'localhost',
+      host: window.location.host.split(':')[0],
       port: 8000,
       path: '/rtc'
     });
