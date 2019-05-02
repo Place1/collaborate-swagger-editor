@@ -1,15 +1,16 @@
 import React from 'react';
 import * as monaco from 'monaco-editor';
-import './monaco-editor.css';
+import './editor.css';
 
-// window.MonacoEnvironment = {
-// 	getWorkerUrl: function (moduleId: string, label: string) {
-//     if (label === 'yaml') {
-//       return './yaml.js';
-//     }
-//     return './editor.worker.js'
-// 	},
-// };
+window.MonacoEnvironment = {
+	getWorker: function (moduleId: string, label: string) {
+    console.log('loading', moduleId, label)
+    if (label === 'yaml') {
+      return new Worker('/yamlWorker.bundle.js');
+    }
+    return new Worker('/editorWorker.bundle.js');
+	},
+};
 
 interface Props {
   onEditor: (editor: monaco.editor.IStandaloneCodeEditor) => void;

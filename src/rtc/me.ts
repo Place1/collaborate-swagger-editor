@@ -1,7 +1,8 @@
 import PeerJS from 'peerjs';
 import { random } from './utils';
-import { Connection, RtcBroadcast, RtcEmitter, RtcInboundEvent } from './connection';
+import { Connection } from './connection';
 import { EventEmitter } from 'events';
+import { RtcEmitter, RtcBroadcast, RtcInboundEvent } from './rpc';
 
 export class Me {
 

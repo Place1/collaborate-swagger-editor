@@ -1,11 +1,11 @@
 import React from 'react';
 import * as monaco from 'monaco-editor';
-import { TextCrdt, Operation, OperationResult } from '../../text-crdt';
-import { Me } from '../../rtc/me';
-import { MonacoEditor } from '../monaco-editor';
-import { CursorsState, RemoteCursors } from '../../editor/remote-cursors';
-import { OpKind } from '../../../kseq/src';
-import { fixEditsForMonacoBug } from '../../hack/resolve-edits-for-monaco-bug';
+import { TextCrdt, Operation, OperationResult } from '../text-crdt';
+import { Me } from '../rtc/me';
+import { MonacoEditor } from './editor';
+import { CursorsState, RemoteCursors } from './remote-cursors';
+import { OpKind } from '../../kseq/src';
+import { fixEditsForMonacoBug } from './hack/resolve-edits-for-monaco-bug';
 
 interface Props {
   crdt: TextCrdt;
@@ -58,7 +58,7 @@ export class RemoteMonaco extends React.Component<Props, State> {
     });
 
     this.props.me.events.on('requestInitial', () => {
-      this.props.me.dispatch('initial', this.props.crdt.toJSON());
+      this.props.me.dispatch('initial' as any, this.props.crdt.toJSON());
     })
 
     this.props.me.events.on('initial', (json) => {

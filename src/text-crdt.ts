@@ -1,5 +1,4 @@
 import { KSeq, Op, OpKind, SerializedKSeq } from "../kseq/src";
-import { Ident, Segment } from '../kseq/src/idents';
 
 export type SerializedCrdt = any;
 
