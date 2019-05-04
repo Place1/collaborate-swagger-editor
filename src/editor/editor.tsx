@@ -30,6 +30,8 @@ export class MonacoEditor extends React.Component<Props> {
       fontSize: 20,
     });
 
+    this.editor.getModel()!.setEOL(monaco.editor.EndOfLineSequence.LF);
+
     this.props.onEditor(this.editor);
   }
 

@@ -24,7 +24,7 @@ export class RemoteCursors extends React.Component<Props> {
         options: {
           afterContentClassName: `another-cursor cursor-color-${colorNumber}`,
           zIndex: 10,
-          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+          // stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
         }
       };
     });

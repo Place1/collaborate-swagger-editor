@@ -6,6 +6,7 @@ import { MonacoEditor } from './editor';
 import { CursorsState, RemoteCursors } from './remote-cursors';
 import { OpKind } from '../../kseq/src';
 import { fixEditsForMonacoBug } from './hack/resolve-edits-for-monaco-bug';
+import { posix } from 'path';
 
 interface Props {
   crdt: TextCrdt;
@@ -61,16 +62,12 @@ export class RemoteMonaco extends React.Component<Props, State> {
       this.props.me.dispatch('initial' as any, this.props.crdt.toJSON());
     })
 
-    let hasLoaded = false;
-    this.props.me.events.on('initial', (json) => {
-      if (!hasLoaded) {
+    this.props.me.events.once('initial', (json) => {
         this.props.crdt.loadFromJSON(json.payload);
         this.locked = true;
         editor.setValue(this.props.crdt.getValue());
         this.locked = false;
-        hasLoaded = true;
-      }
-    })
+    });
 
     this.props.me.events.on('changes', (event) => {
       this.locked = true
@@ -107,7 +104,7 @@ function applyChangesToCrdt(crdt: TextCrdt, changes: monaco.editor.IModelContent
 
 function applyOperationResultsToEditor(editor: monaco.editor.IStandaloneCodeEditor, opResults: OperationResult[]) {
   const model = editor.getModel()!;
-  let edits = opResults.map((opResult) => {
+  let edits = opResults.map((opResult): monaco.editor.IIdentifiedSingleEditOperation => {
     const start = model.getPositionAt(opResult.position);
     const end = model.getPositionAt(opResult.position + (opResult.kind === OpKind.Remove ? 1 : 0));
     return {
@@ -118,8 +115,15 @@ function applyOperationResultsToEditor(editor: monaco.editor.IStandaloneCodeEdit
         end.lineNumber,
         end.column,
       ),
+      forceMoveMarkers: true,
     };
   });
   edits = fixEditsForMonacoBug(edits);
-  edits.forEach((edit) => model.applyEdits([edit]));
+  const cursorPosition = editor.getPosition();
+  edits.forEach((edit) => {
+    model.applyEdits([edit])
+    if (cursorPosition && edit.range.containsPosition(cursorPosition)) {
+      editor.setPosition(cursorPosition);
+    }
+  });
 }
