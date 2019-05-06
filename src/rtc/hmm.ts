@@ -3,6 +3,9 @@ import { Me } from './me';
 const queryParams = new URLSearchParams(window.location.search);
 
 export const me = new Me(queryParams.get('testid') || undefined);
+
+(window as any).disconnect = () => me.disconnect()
+
 console.info(`my peerid ${me.id()}`)
 
 const existingPeerID = queryParams.get('peerid');

@@ -3,6 +3,7 @@ import { random } from './utils';
 import { Connection } from './connection';
 import { EventEmitter } from 'events';
 import { RtcEmitter, RtcBroadcast, RtcInboundEvent } from './rpc';
+import { sleep } from '../utils';
 
 export class Me {
 
@@ -53,8 +54,23 @@ export class Me {
     });
   }
 
+  disconnect() {
+    this.peer.disconnect();
+  }
+
+  async reconnect() {
+    await sleep(1000);
+    if (this.peer.disconnected) {
+      console.log('attempting to reconnect...');
+      this.peer.reconnect(); // if this fails then onDisconnect will happen and we'll endup re-trying
+    }
+  }
+
   private onOpen = () => {
     console.info('i have connected');
+    for (const connection of this.connections.values()) {
+      this.createConnection(this.peer.connect(connection.id()));
+    }
   }
 
   /**
@@ -66,7 +82,8 @@ export class Me {
   }
 
   private onDisconnected = () => {
-    console.info('i have disconnected')
+    console.info('i have disconnected');
+    this.reconnect();
   }
 
   private onError = (err: Error) => {

@@ -20,3 +20,7 @@ export function invarient(condition: boolean, message: string) {
 		console.warn(`invariant has been broken: ${message}`);
 	}
 }
+
+export async function sleep(time: number) {
+	return new Promise((resolve) => setTimeout(() => resolve(), time));
+}
