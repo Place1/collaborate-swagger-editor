@@ -55,7 +55,10 @@ export class Me {
   }
 
   disconnect() {
-    this.peer.disconnect();
+    this.peer.disconnect(); // disconnects from the signalling server
+    for (const connection of this.connections.values()) {
+      connection.disconnect();
+    }
   }
 
   async reconnect() {
@@ -67,9 +70,12 @@ export class Me {
   }
 
   private onOpen = () => {
-    console.info('i have connected');
+    console.info('i have connected', this.connections);
     for (const connection of this.connections.values()) {
-      this.createConnection(this.peer.connect(connection.id()));
+      if (!connection.isOpen()) {
+        console.info(`reconnecting to ${connection.id()}`)
+        this.createConnection(this.peer.connect(connection.id()));
+      }
     }
   }
 
@@ -77,7 +83,7 @@ export class Me {
    * handle a peer connecting to us
    */
   private onConnection = (connection: PeerJS.DataConnection) => {
-    console.info(`connected to ${connection.peer}`)
+    console.info(`connected to ${connection.peer}`);
     this.createConnection(connection);
   }
 
@@ -105,8 +111,8 @@ export class Me {
   private createConnection(raw: PeerJS.DataConnection) {
     const connection = new Connection(raw, this.events);
     connection.events.once('open', () => connection.send('peerList', Array.from(this.connections.keys())));
-    connection.events.once('close', () => this.connections.delete(connection.id()));
-    connection.events.once('error', () => this.connections.delete(connection.id()));
+    // connection.events.once('close', () => this.connections.delete(connection.id()));
+    // connection.events.once('error', () => this.connections.delete(connection.id()));
     this.connections.set(raw.peer, connection);
     return connection;
   }

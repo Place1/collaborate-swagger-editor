@@ -4,7 +4,7 @@ const queryParams = new URLSearchParams(window.location.search);
 
 export const me = new Me(queryParams.get('testid') || undefined);
 
-(window as any).disconnect = () => me.disconnect()
+(window as any).me = me;
 
 console.info(`my peerid ${me.id()}`)
 
