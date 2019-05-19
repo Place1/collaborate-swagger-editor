@@ -70,7 +70,7 @@ export class Me {
   }
 
   private onOpen = () => {
-    console.info('i have connected', this.connections);
+    console.info('i have connected to the signalling server');
     for (const connection of this.connections.values()) {
       if (!connection.isOpen()) {
         console.info(`reconnecting to ${connection.id()}`)
@@ -88,7 +88,7 @@ export class Me {
   }
 
   private onDisconnected = () => {
-    console.info('i have disconnected');
+    console.info('i have disconnected from the signalling server');
     this.reconnect();
   }
 

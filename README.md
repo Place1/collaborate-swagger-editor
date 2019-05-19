@@ -16,4 +16,4 @@ git submodule update
   - when a peer drops, it can buffer it's operations and then broadcast them when it reconnects.
   - the peer must connect to an up-to-date peerlist before rebroadcasting
     so that peers that connected while it was offline also see it's buffered operations.
-  -
+  - there's a window of 5 seconds before the `me.connections.get('2').raw.peerConnection.iceConnectionState` becomes disconnected
