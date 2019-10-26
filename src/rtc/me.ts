@@ -1,9 +1,10 @@
 import PeerJS from 'peerjs';
 import { random } from './utils';
-import { Connection } from './connection';
+import { Connection, RawMessage } from './connection';
 import { EventEmitter } from 'events';
 import { RtcEmitter, RtcBroadcast, RtcInboundEvent } from './rpc';
 import { sleep } from '../utils';
+import { type } from 'os';
 
 export class Me {
 
@@ -12,15 +13,21 @@ export class Me {
   private peerid: string;
   private peer: PeerJS;
   private connections = new Map<string, Connection>();
+  private outboundHistory = new Map<string, Array<RawMessage>>();
 
-  constructor(id = random()) {
-    this.peerid = id;
-    this.peer = new PeerJS(this.peerid, {
-      secure: false,
-      host: window.location.host.split(':')[0],
-      port: 8000,
-      path: '/rtc'
-    });
+  constructor(id: string | PeerJS = random()) {
+    if (typeof(id) === 'string') {
+      this.peerid = id;
+      this.peer = new PeerJS(this.peerid, {
+        secure: false,
+        host: window.location.host.split(':')[0],
+        port: 8000,
+        path: '/rtc'
+      });
+    } else {
+      this.peerid = id.id;
+      this.peer = id;
+    }
     this.peer.on('open', this.onOpen);
     this.peer.on('connection', this.onConnection);
     this.peer.on('disconnected', this.onDisconnected);
@@ -39,6 +46,7 @@ export class Me {
       if (payload !== undefined) {
         payload = JSON.parse(JSON.stringify(payload));
       }
+      this.outboundHistory.get(connection.id())!.push({ event, payload });
       connection.send(event, payload);
     }
   }
@@ -52,6 +60,10 @@ export class Me {
     connection.events.once('open', () => {
       connection.send('requestInitial');
     });
+  }
+
+  currentPeers() {
+    return Array.from(this.connections.keys());
   }
 
   disconnect() {
@@ -89,7 +101,7 @@ export class Me {
 
   private onDisconnected = () => {
     console.info('i have disconnected from the signalling server');
-    this.reconnect();
+    // this.reconnect();
   }
 
   private onError = (err: Error) => {
@@ -114,6 +126,9 @@ export class Me {
     // connection.events.once('close', () => this.connections.delete(connection.id()));
     // connection.events.once('error', () => this.connections.delete(connection.id()));
     this.connections.set(raw.peer, connection);
+    if (!this.outboundHistory.has(connection.id())) {
+      this.outboundHistory.set(connection.id(), []);
+    }
     return connection;
   }
 }

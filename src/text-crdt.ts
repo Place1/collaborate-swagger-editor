@@ -45,7 +45,10 @@ export class TextCrdt {
     // delete the range
     for (let i = end; i >= start; i--) {
       // console.log(`removing ${i}`)
-      operations.push(this.crdt.remove(i));
+      const op = this.crdt.remove(i);
+      if (op) {
+        operations.push();
+      }
     }
 
     // insert the new text

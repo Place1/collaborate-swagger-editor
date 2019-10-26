@@ -10,7 +10,7 @@ export interface RtcOutEvents {
   requestInitial: void;
   initial: SerializedCrdt;
   changes: Operation[];
-  cursorPosition: monaco.Position;
+  cursorPosition: monaco.IPosition;
 
   // private section (perhaps move to another emitter)
   peerList: string[];

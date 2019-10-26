@@ -12,7 +12,7 @@ export interface ConnectionEvents {
 
 export type ConnectionEmitter = StrictEventEmitter<EventEmitter, ConnectionEvents>;
 
-interface RawMessage {
+export interface RawMessage {
   event: string;
   payload: any; // a JSON object
 }
@@ -59,7 +59,7 @@ export class Connection {
 
   private onOpen = () => {
     console.log(`connection open ${this.id()}`);
-    this.startHeartbeat();
+    // this.startHeartbeat();
     this.events.emit('open');
   }
 
@@ -95,21 +95,21 @@ export class Connection {
     this.raw.off('data', this.onData);
     this.raw.off('error', this.onError);
     this.raw.off('close', this.onClose);
-    this.stopHeartbeat();
+    // this.stopHeartbeat();
   }
 
-  private startHeartbeat() {
-    console.info(`starting heartbeat with ${this.id()}`)
-    this.heartbeatIntervalID = setInterval(() => {
-      const rawMessage: RawMessage = { event: '__heartbeat', payload: undefined };
-      console.info(`sending data to ${this.id()}`, rawMessage);
-      this.raw.send(rawMessage);
-    }, getRandomInt(4000, 5000)) as any;
-  }
+  // private startHeartbeat() {
+  //   console.info(`starting heartbeat with ${this.id()}`)
+  //   this.heartbeatIntervalID = setInterval(() => {
+  //     const rawMessage: RawMessage = { event: '__heartbeat', payload: undefined };
+  //     console.info(`sending data to ${this.id()}`, rawMessage);
+  //     this.raw.send(rawMessage);
+  //   }, getRandomInt(4000, 5000)) as any;
+  // }
 
-  private stopHeartbeat() {
-    if (this.heartbeatIntervalID !== undefined) {
-      clearInterval(this.heartbeatIntervalID);
-    }
-  }
+  // private stopHeartbeat() {
+  //   if (this.heartbeatIntervalID !== undefined) {
+  //     clearInterval(this.heartbeatIntervalID);
+  //   }
+  // }
 }
