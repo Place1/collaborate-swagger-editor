@@ -27,7 +27,7 @@
     "strict-event-emitter-types": "^2.0.0",
     "swagger-editor": "^3.6.28",
     "swagger-editor-dist": "^3.6.28",
-    "swagger-ui": "^3.22.1"
+    "swagger-ui": "^4.1.2"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
