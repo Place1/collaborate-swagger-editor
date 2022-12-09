@@ -13,7 +13,7 @@
     "bittorrent-dht": "^9.0.0",
     "cors": "^2.8.5",
     "ed25519-supercop": "^1.2.0",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "js-yaml": "^3.13.1",
     "magnet-uri": "^5.2.4",
     "monaco-editor": "^0.16.2",
